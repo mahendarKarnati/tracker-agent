@@ -1,4 +1,4 @@
-name: Build Tracker Agent
+name: Build Tracker Agent Installer
 
 on:
   push:
@@ -19,25 +19,34 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Build
+      - name: Build Jar
         run: mvn clean package -DskipTests
 
-      - name: Create dist
+      - name: Prepare Dist
+        shell: cmd
         run: |
           mkdir dist
           copy target\tracker-backend-0.0.1-SNAPSHOT.jar dist\
 
-      - name: Package App
+      - name: Create Installer
+        shell: cmd
         run: |
-          jpackage `
-            --type app-image `
-            --name TrackerAgent `
-            --input dist `
-            --main-jar tracker-backend-0.0.1-SNAPSHOT.jar `
-            --dest output
+          jpackage ^
+          --type exe ^
+          --name TrackerAgent ^
+          --vendor "HANSETECH SOFT SOLUTION PRIVATE LIMITED" ^
+          --app-version 1.0.0 ^
+          --input dist ^
+          --main-jar tracker-backend-0.0.1-SNAPSHOT.jar ^
+          --win-shortcut ^
+          --win-menu ^
+          --win-dir-chooser ^
+          --win-per-user-install ^
+          --install-dir TrackerAgent ^
+          --dest installer
 
-      - name: Upload Artifact
+      - name: Upload Installer
         uses: actions/upload-artifact@v4
         with:
-          name: TrackerAgent
-          path: output
+          name: TrackerAgentSetup
+          path: installer
