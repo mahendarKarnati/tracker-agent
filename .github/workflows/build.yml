@@ -1,0 +1,43 @@
+name: Build Tracker Agent
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Build
+        run: mvn clean package -DskipTests
+
+      - name: Create dist
+        run: |
+          mkdir dist
+          copy target\tracker-backend-0.0.1-SNAPSHOT.jar dist\
+
+      - name: Package App
+        run: |
+          jpackage `
+            --type app-image `
+            --name TrackerAgent `
+            --input dist `
+            --main-jar tracker-backend-0.0.1-SNAPSHOT.jar `
+            --dest output
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrackerAgent
+          path: output
