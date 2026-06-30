@@ -23,27 +23,63 @@ public class StartupRunner {
     private final StartupService startupService;
     private final TrayManager trayManager;
 
+//    @EventListener(ApplicationReadyEvent.class)
+//    public void init() {
+//    	  log.info("StartupRunner started");
+//        if (loginService.autoLogin()) {
+//        	startupService.enableStartup();
+//
+//            deviceRegistrationService.registerDevice();
+//
+//            log.info("AUTO LOGIN SUCCESS");
+//
+//            return;
+//        }
+//
+//        SwingUtilities.invokeLater(() -> {
+//
+//            LoginFrame frame =
+//                    new LoginFrame(
+//                            loginService,
+//                            deviceRegistrationService,registerService,startupService,trayManager);
+//
+//            frame.setVisible(true);
+//        });
+//    }
+    
     @EventListener(ApplicationReadyEvent.class)
     public void init() {
 
-        if (loginService.autoLogin()) {
-        	startupService.enableStartup();
+        log.info("StartupRunner started");
+
+        boolean auto = loginService.autoLogin();
+
+        log.info("Auto Login = {}", auto);
+
+        if (auto) {
+
+            log.info("Calling enableStartup()");
+
+            startupService.enableStartup();
+
+            log.info("Calling registerDevice()");
 
             deviceRegistrationService.registerDevice();
-
-            log.info("AUTO LOGIN SUCCESS");
 
             return;
         }
 
+        log.info("Showing Login Screen");
+
         SwingUtilities.invokeLater(() -> {
-
-            LoginFrame frame =
-                    new LoginFrame(
-                            loginService,
-                            deviceRegistrationService,registerService,startupService,trayManager);
-
+            LoginFrame frame = new LoginFrame(
+                    loginService,
+                    deviceRegistrationService,
+                    registerService,
+                    startupService,
+                    trayManager);
             frame.setVisible(true);
         });
     }
+    
 }

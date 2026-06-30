@@ -15,6 +15,7 @@ public class StartupService {
             "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run";
 
     public void enableStartup() {
+    	
 
         try {
 
@@ -28,6 +29,8 @@ public class StartupService {
             if (installedExe.exists()) {
 
                 exePath = installedExe.getAbsolutePath();
+                log.info("Enabling startup...");
+                log.info("Startup path = {}", exePath);
 
             } else {
 
@@ -47,13 +50,29 @@ public class StartupService {
                     + "/d \"" + exePath + "\" "
                     + "/f";
 
-            Process process =
-                    Runtime.getRuntime().exec(command);
+//            Process process =
+//                    Runtime.getRuntime().exec(command);
+            
+            ProcessBuilder pb =
+                    new ProcessBuilder(
+                            "reg",
+                            "add",
+                            REG_KEY,
+                            "/v",
+                            "TrackerAgent",
+                            "/t",
+                            "REG_SZ",
+                            "/d",
+                            exePath,
+                            "/f");
 
-            process.waitFor();
+            Process process = pb.start();
 
-            log.info("Startup Enabled");
+            int exit = process.waitFor();
 
+            log.info("REG EXIT CODE = {}", exit);
+
+           
         } catch (Exception e) {
 
             log.error(e.getMessage());
