@@ -34,6 +34,7 @@ public class IdleMonitorScheduler {
     	}
 
         if (authSession.getDeviceId() == null) {
+        	
             return;
         }
 

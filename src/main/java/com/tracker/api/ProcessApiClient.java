@@ -51,7 +51,7 @@ public class ProcessApiClient {
         } catch (Exception ex) {
 
         	log.error(
-                    "CREATE FAILED");
+                    "CREATE FAILED",ex);
 
             offlineStorageService.save(activity);
 
@@ -80,7 +80,7 @@ public class ProcessApiClient {
         } catch (Exception ex) {
 
         	log.error(
-                    "UPDATE FAILED");
+                    "UPDATE FAILED",ex);
 
             offlineStorageService.save(activity);
         }

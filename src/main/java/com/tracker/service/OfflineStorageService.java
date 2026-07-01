@@ -13,6 +13,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.tracker.entity.OfflineSession;
 import com.tracker.entity.ProcessActivity;
 import com.tracker.model.AuthSession;
 
@@ -24,28 +25,33 @@ public class OfflineStorageService {
 
 //    private final ConfigService configService;
 	@Value("${server.url}")
-    private String serverUrl;
+	private String serverUrl;
 
-    private final ObjectMapper mapper =
-            new ObjectMapper()
-                    .registerModule(new JavaTimeModule())
-                    .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+	private final ObjectMapper mapper =
+	        new ObjectMapper()
+	                .registerModule(new JavaTimeModule())
+	                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-    private final File folder;
-    private final File processFile;
+	private final File folder;
+	private final File processFile;
+	private final File sessionFile;
 
-    public OfflineStorageService() {
+	public OfflineStorageService() {
 
-       
+	    folder = new File(
+	            System.getenv("APPDATA"),
+	            "TrackerAgent\\offline");
 
-        folder = new File("offline");
+	    if (!folder.exists()) {
+	        folder.mkdirs();
+	    }
 
-        if (!folder.exists()) {
-            folder.mkdirs();
-        }
+	    processFile = new File(folder, "processes.json");
+	    sessionFile = new File(folder, "sessions.json");
 
-        processFile = new File(folder, "processes.json");
-    }
+	    log.info("Offline Folder = {}", folder.getAbsolutePath());
+	    log.info("Folder Exists = {}", folder.exists());
+	}
 
     public synchronized void save(ProcessActivity activity) {
 
@@ -62,7 +68,7 @@ public class OfflineStorageService {
                             new TypeReference<List<ProcessActivity>>() {});
 
                 } catch (Exception ex) {
-
+                	 log.error("Offline Save Failed", ex);
                     processFile.delete();
                     list = new ArrayList<>();
                 }
@@ -141,14 +147,59 @@ public class OfflineStorageService {
                 count++;
             }
 
-            processFile.delete();
+            boolean deleted = processFile.delete();
 
+            log.info("Offline file deleted = {}", deleted);
             log.info(
                     "Offline Sync Completed : {} records",count);
 
         } catch (Exception e) {
 
-           log.error(e.getMessage());
+            log.error("Offline Sync Failed", e);
+        }
+    }
+    
+    public void syncSessions(AuthSession authSession) {
+
+        try {
+
+            if (!sessionFile.exists()) {
+                return;
+            }
+
+            List<OfflineSession> list =
+                    mapper.readValue(
+                            sessionFile,
+                            new TypeReference<List<OfflineSession>>() {});
+
+            RestTemplate restTemplate = new RestTemplate();
+
+            int count = 0;
+
+            for (OfflineSession session : list) {
+
+                if ("END".equals(session.getStatus())) {
+
+                    restTemplate.postForObject(
+                            serverUrl
+                                    + "/api/session/end/"
+                                    + authSession.getDeviceId(),
+                            null,
+                            String.class);
+
+                    count++;
+                }
+            }
+
+            boolean deleted = sessionFile.delete();
+
+            log.info("Offline Session File Deleted = {}", deleted);
+
+            log.info("Offline Session Sync Completed : {}", count);
+
+        } catch (Exception e) {
+
+            log.error("Offline Session Sync Failed", e);
         }
     }
 
@@ -156,6 +207,42 @@ public class OfflineStorageService {
 
         if (processFile.exists()) {
             processFile.delete();
+        }
+        
+        if (sessionFile.exists()) {
+        	sessionFile.delete();
+        }
+        
+        
+        
+        
+        
+    }
+    
+    
+    
+    
+    public synchronized void saveSession(OfflineSession session) {
+
+        try {
+
+            List<OfflineSession> list = new ArrayList<>();
+
+            if (sessionFile.exists()) {
+
+                list = mapper.readValue(
+                        sessionFile,
+                        new TypeReference<List<OfflineSession>>() {});
+            }
+
+            list.add(session);
+
+            mapper.writerWithDefaultPrettyPrinter()
+                    .writeValue(sessionFile, list);
+
+        } catch (Exception e) {
+
+            log.error("Session Offline Save Failed", e);
         }
     }
 }

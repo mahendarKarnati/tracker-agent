@@ -9,9 +9,11 @@ import com.tracker.service.ActiveWindowTrackerService;
 import com.tracker.service.WindowService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class ActiveWindowScheduler {
 
     private final WindowService windowService;

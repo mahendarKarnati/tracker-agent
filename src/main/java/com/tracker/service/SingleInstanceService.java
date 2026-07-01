@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class SingleInstanceService {
+	
+	private RandomAccessFile raf;
 
     private FileLock lock;
 
@@ -21,11 +23,16 @@ public class SingleInstanceService {
                             System.getProperty("user.home"),
                             ".tracker.lock");
 
-            RandomAccessFile raf =
+            raf =
                     new RandomAccessFile(file, "rw");
 
             lock =
                     raf.getChannel().tryLock();
+            System.out.println("LOCK FILE = " + file.getAbsolutePath());
+
+            System.out.println("LOCK RESULT = " + (lock != null));
+
+            System.out.println("PID = " + ProcessHandle.current().pid());
 
             return lock != null;
 

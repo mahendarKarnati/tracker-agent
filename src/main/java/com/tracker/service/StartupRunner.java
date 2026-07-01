@@ -49,7 +49,7 @@ public class StartupRunner {
     
     @EventListener(ApplicationReadyEvent.class)
     public void init() {
-
+    	log.info("PID = {}", ProcessHandle.current().pid());
         log.info("StartupRunner started");
 
         boolean auto = loginService.autoLogin();

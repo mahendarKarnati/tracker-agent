@@ -1,10 +1,14 @@
 package com.tracker.api;
 
+import java.time.LocalDateTime;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import com.tracker.entity.OfflineSession;
 import com.tracker.model.AuthSession;
+import com.tracker.service.OfflineStorageService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SessionApiClient {
 
     private final AuthSession authSession;
+    private final OfflineStorageService offlineStorageService;
 //    private final ConfigService configService;
     @Value("${server.url}")
     private String serverUrl;
@@ -43,14 +48,36 @@ public class SessionApiClient {
     
     public void endSession() {
 
-        if (authSession.getDeviceId() == null)
-            return;
+        log.info("END SESSION CALLED");
 
-        restTemplate.postForObject(
-                serverUrl
-                        + "/api/session/end/"
-                        + authSession.getDeviceId(),
-                null,
-                String.class);
+        if (authSession.getDeviceId() == null) {
+
+            log.warn("DeviceId is null");
+
+            return;
+        }
+
+        log.info("Ending session for device {}", authSession.getDeviceId());
+
+        try {
+
+            restTemplate.postForObject(
+                    serverUrl + "/api/session/end/" + authSession.getDeviceId(),
+                    null,
+                    String.class);
+
+            log.info("END SESSION SUCCESS");
+
+        } catch (Exception ex) {
+
+            log.error("END SESSION FAILED", ex);
+
+            offlineStorageService.saveSession(
+                    OfflineSession.builder()
+                            .deviceId(authSession.getDeviceId())
+                            .endTime(LocalDateTime.now())
+                            .status("END")
+                            .build());
+        }
     }
 }
